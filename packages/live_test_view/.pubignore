@@ -1,0 +1,4 @@
+# Build artifacts left behind by running the test suite locally.
+# Not part of the published package.
+build/
+example/build/

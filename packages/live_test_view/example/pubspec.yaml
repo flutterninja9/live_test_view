@@ -1,0 +1,16 @@
+name: live_test_view_example
+description: Fixture app for live_test_view's end-to-end tests.
+publish_to: none
+environment:
+  sdk: ^3.2.0
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  live_test_view:
+    path: ../
+
+flutter:
+  uses-material-design: true

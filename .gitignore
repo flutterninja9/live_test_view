@@ -1,0 +1,13 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+*.g.dart.bak
+
+# Node / VS Code extension
+node_modules/
+*.vsix
+
+# Editor / OS
+.vscode/
+.DS_Store

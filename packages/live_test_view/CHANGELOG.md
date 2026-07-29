@@ -1,0 +1,8 @@
+## 0.1.0
+
+Initial release.
+
+- `liveTestView` test-executable hook: activates frame capture only when `LIVE_TEST_VIEW=1` is set, and is a byte-for-byte no-op otherwise.
+- Frame capture after every pumped frame, encoded as PNG and emitted as an ordered, gapless sequence of `##LTV##`-prefixed JSON lines on stdout.
+- 500-frame cap per test run, with a warning line emitted once the cap is reached.
+- `dart run live_test_view:install` — writes `test/flutter_test_config.dart`, or prints manual wiring instructions if one already exists.
