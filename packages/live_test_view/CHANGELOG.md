@@ -1,3 +1,7 @@
+## 0.2.0
+
+- Fix bug where jank inital and final frames were rendering
+
 ## 0.1.0
 
 Initial release.
