@@ -56,6 +56,7 @@ class FrameCapture {
   // serializing on the way in.
   final _completed = <int, _EncodedFrame>{};
   int _nextEmitSeq = 0;
+  int _emittedCount = 0;
   int _pendingCount = 0;
   Completer<void>? _drainWaiter;
   bool _active = false;
@@ -70,12 +71,10 @@ class FrameCapture {
   void setActive(bool value) {
     _active = value;
     if (value) _firstFrameAt = null;
-    stderr.writeln('DEBUG setActive($value) at seq=$_seq');
   }
 
   /// Called synchronously from a persistent frame callback, after paint.
   void onFrame() {
-    stderr.writeln('DEBUG onFrame active=$_active seq=$_seq');
     if (!_active) return;
     _firstFrameAt ??= _binding.clock.now();
     if (_seq >= maxFrames) {
@@ -111,6 +110,19 @@ class FrameCapture {
     ui.Image? image;
     try {
       image = await imageFuture;
+      // Raw pixels first (cheap, uncompressed) so we can validate the
+      // composite before paying for PNG encoding.
+      final raw = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (raw == null || _isIncompleteComposite(raw, image.width, image.height)) {
+        // Empirically observed: on an intermittent tick, `toImage()` snapshots
+        // a layer tree mid-recomposition — only some child layers attached,
+        // the rest still transparent. A real Flutter app always paints an
+        // opaque Scaffold/Material background over the whole viewport, so a
+        // transparent corner unambiguously means "not a real frame", not
+        // "app with a transparent background". Drop it: never occupies the
+        // emit slot, so _emitReady skips over it without a gap in the output.
+        return;
+      }
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       if (bytes == null) return;
       _completed[seq] = _EncodedFrame(
@@ -129,27 +141,46 @@ class FrameCapture {
     }
   }
 
+  /// True if any corner of the raw RGBA buffer is transparent. See the call
+  /// site for why that means "capture glitch", not "app content".
+  bool _isIncompleteComposite(ByteData raw, int width, int height) {
+    bool transparentAt(int x, int y) {
+      final offset = (y * width + x) * 4;
+      if (offset + 3 >= raw.lengthInBytes) return true;
+      return raw.getUint8(offset + 3) < 250;
+    }
+
+    return transparentAt(0, 0) ||
+        transparentAt(width - 1, 0) ||
+        transparentAt(0, height - 1) ||
+        transparentAt(width - 1, height - 1);
+  }
+
   void _emitReady() {
     while (true) {
       final frame = _completed.remove(_nextEmitSeq);
       if (frame == null) {
         // If the frame at _nextEmitSeq will never arrive (dropped due to an
-        // error), don't stall the rest of the queue behind it forever.
-        // With no in-flight work left and a gap, skip past it.
+        // error or a detected glitch), don't stall the rest of the queue
+        // behind it forever. With no in-flight work left and a gap, skip
+        // past it.
         if (_pendingCount == 0 && _completed.isNotEmpty) {
           _nextEmitSeq++;
           continue;
         }
         return;
       }
+      _nextEmitSeq++;
+      // _emittedCount (not _nextEmitSeq) is the output seq: it counts only
+      // frames actually written, so dropped glitches never leave a gap in
+      // the numbering the extension relies on for ordering.
       _sink.writeln(encodeFrameLine(
-        seq: _nextEmitSeq,
+        seq: _emittedCount++,
         testTimeMs: frame.testTimeMs,
         width: frame.width,
         height: frame.height,
         png: frame.png,
       ));
-      _nextEmitSeq++;
     }
   }
 
