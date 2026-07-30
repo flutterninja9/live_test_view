@@ -2,6 +2,8 @@
 
 Streams rendered frames from your Flutter widget tests so the Live Test View VS Code extension can replay them live in an editor panel. On its own — without the extension driving it — this package does nothing observable at all.
 
+![Live Test View demo](https://raw.githubusercontent.com/flutterninja9/live_test_view/main/assets/live_preview_demo.gif)
+
 ## Install
 
 ```bash

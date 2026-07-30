@@ -2,9 +2,7 @@
 
 Run a Flutter widget test and watch it render, frame by frame, in a panel beside your editor — no debugger, no manual screenshotting.
 
-## Before publishing
-
-- [ ] Demo GIF: record with the example app before publishing.
+![Live Test View demo](https://raw.githubusercontent.com/flutterninja9/live_test_view/main/assets/live_preview_demo.gif)
 
 ## Usage
 

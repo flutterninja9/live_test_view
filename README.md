@@ -2,6 +2,8 @@
 
 Watch your Flutter widget tests render live, right next to the code, without leaving your editor. Click a CodeLens above any `testWidgets` block and a panel opens beside your editor, replaying every frame the test painted as the test ran.
 
+![Live Test View demo](https://raw.githubusercontent.com/flutterninja9/live_test_view/main/assets/live_preview_demo.gif)
+
 This repo has two halves that work together:
 
 - [`packages/live_test_view`](packages/live_test_view) — a tiny Dart package you add to a Flutter project. When activated, it captures a PNG of every rendered frame during a widget test and streams them on stdout.
@@ -43,10 +45,6 @@ Project fonts and package-bundled fonts (anything declared under `flutter: fonts
 **No frames appear ("No frames received" in the panel):** the `live_test_view` package isn't wired into this project yet, or the test process never ran through it. Use the panel's "Set up Live Test View" button, or run the two setup commands above manually. If the project already has a `test/flutter_test_config.dart` (common in larger apps), the installer won't overwrite it — it prints instructions for wrapping your existing `testExecutable` body with `liveTestView(...)` by hand.
 
 **Frames arrive all at once instead of trickling in:** this is expected. Widget tests commonly run on a fake clock (`FakeAsync`), which starves the real event loop until the test body finishes — so frames are captured throughout the test but only flush to stdout in a burst near the end. The panel compensates by replaying the burst as paced playback, spacing frames apart using the fake clock's own timestamps (capped at 300ms per gap) so it still reads as a live sequence. The timeline scrubber holds the full frame history regardless, so nothing is lost — you can always scrub back through every frame after the fact.
-
-## Before publishing
-
-- [ ] Demo GIF: record with the example app before publishing.
 
 ## License
 
