@@ -1,17 +1,57 @@
 {
   "name": "live-test-view",
-  "displayName": "Live Test View",
-  "description": "Watch Flutter widget tests render live as they run.",
+  "displayName": "Live Test View — Flutter Widget Test Preview",
+  "description": "Watch Flutter widget tests render live, frame by frame, in a panel beside your editor — no debugger, no manual screenshotting. Click ▶ Live View above any testWidgets block.",
   "version": "0.1.0",
-  "publisher": "anirudh-singh",
+  "publisher": "AnirudhSingh",
   "license": "MIT",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Testing"],
-  "activationEvents": ["onLanguage:dart"],
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing",
+    "Visualization"
+  ],
+  "keywords": [
+    "flutter",
+    "dart",
+    "widget test",
+    "flutter test",
+    "testWidgets",
+    "test runner",
+    "live preview",
+    "visual testing",
+    "screenshot testing",
+    "tdd",
+    "codelens",
+    "widget tree",
+    "test explorer"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flutterninja9/live_test_view.git",
+    "directory": "extension"
+  },
+  "bugs": {
+    "url": "https://github.com/flutterninja9/live_test_view/issues"
+  },
+  "homepage": "https://github.com/flutterninja9/live_test_view#readme",
+  "galleryBanner": {
+    "color": "#0D2436",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "activationEvents": [
+    "onLanguage:dart"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      { "command": "liveTestView.runTest", "title": "Live Test View: Run Test" }
+      {
+        "command": "liveTestView.runTest",
+        "title": "Live Test View: Run Test"
+      }
     ]
   },
   "scripts": {
