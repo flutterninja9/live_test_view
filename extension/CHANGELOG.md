@@ -1,3 +1,9 @@
+## 0.2.0
+
+- Redesigned the panel UI/UX: overhauled timeline, frame view, and overall styling.
+- Marketplace-ready metadata: icon, keywords, categories, repository/bugs/homepage links, gallery banner, and pricing.
+- README now embeds the demo GIF instead of a placeholder.
+
 ## 0.1.0
 
 Initial release.

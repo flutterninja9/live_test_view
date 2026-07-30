@@ -1,3 +1,8 @@
+## 0.2.1
+
+- Fix: a font that fails to load from `FontManifest.json` no longer aborts the rest of the manifest — each family loads independently, and a failure emits a `##LTV##` warning line naming it instead of silently rendering a placeholder box.
+- Document that `google_fonts` can't render in Live Test View (a structural conflict with `flutter_test`'s HTTP mocking, not a bug) and the offline-asset workaround.
+
 ## 0.2.0
 
 - Fix bug where jank inital and final frames were rendering
