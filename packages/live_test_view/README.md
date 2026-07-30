@@ -39,6 +39,20 @@ This package is designed so that adding it can never change your test suite's be
 
 This package only captures and streams frames — it has no UI of its own. Pair it with the "Live Test View" VS Code extension, which adds the "▶ Live View" CodeLens, runs your tests, and renders the captured frames in a scrubbable timeline panel.
 
+## Fonts
+
+`flutter test` renders all text with a placeholder font (every glyph a solid box) unless something loads real fonts in. When `LIVE_TEST_VIEW=1`, `liveTestView` does this for you before `testMain` runs, via `loadRealFonts()`:
+
+- **Roboto** — resolved from the running Flutter SDK's own cache (`bin/cache/artifacts/material_fonts`), so it works with any SDK install without the project needing to bundle it.
+- **Every family in the test build's `FontManifest.json`** — this covers project fonts declared under `flutter: fonts:` in `pubspec.yaml`, package-bundled fonts, and `MaterialIcons`. Each family is loaded independently; if one fails (bad asset, malformed manifest entry), a `##LTV##` warning line is emitted naming it and the rest of the manifest still loads.
+
+**`google_fonts` is not covered by either mechanism and can't be made to work here.** It isn't in `FontManifest.json` — it fetches its `.ttf` over HTTP the first time `GoogleFonts.xxx()` is called, as a fire-and-forget `Future` the widget doesn't await. Two things make this unrecoverable inside `flutter test`:
+
+1. `flutter_test` installs a global `HttpOverrides` that makes every HTTP request in the process return a fake 400, so the fetch always fails.
+2. The fetch is *initiated* inside `flutter_test`'s FakeAsync-controlled zone (during widget `build()`). Bypassing the HTTP mock and awaiting the request from a real zone afterward (`binding.runAsync`) doesn't help — it deadlocks, because the pending Future is entangled with a fake clock that nothing is advancing anymore. There's no sequencing trick around this from outside `google_fonts`.
+
+If a project needs `google_fonts` text to render in Live Test View, bundle the actual `.ttf` files as assets and set `GoogleFonts.config.allowRuntimeFetching = false` in the app. That routes `google_fonts` through the local asset bundle instead of the network — the same `FontManifest.json`-backed path above, which already works. This is `google_fonts`' own recommended setup for golden/widget tests generally: https://pub.dev/packages/google_fonts#offline-support-and-cache
+
 ## Requirements
 
 - Flutter >= 3.16

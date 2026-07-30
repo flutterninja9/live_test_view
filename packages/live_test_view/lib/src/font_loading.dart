@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import 'protocol.dart';
+
 /// Loads real fonts into the test environment so captured frames show
 /// actual glyphs.
 ///
@@ -42,22 +44,35 @@ Future<void> _loadRobotoFromSdkCache() async {
 
 /// Fonts the project itself bundles (and MaterialIcons) are listed in
 /// FontManifest.json and loadable through the asset bundle.
+///
+/// Not to be confused with fonts an app loads itself at runtime (e.g.
+/// `google_fonts`, which fetches over HTTP the first time it's used) — those
+/// aren't in this manifest and aren't handled here. See the "Fonts" section
+/// in the README for why that case can't be supported the same way.
 Future<void> _loadFontManifestFonts() async {
+  List<dynamic> manifest;
   try {
     final manifestData = await rootBundle.load('FontManifest.json');
-    final manifest =
-        json.decode(utf8.decode(manifestData.buffer.asUint8List()))
-            as List<dynamic>;
-    for (final entry in manifest.cast<Map<String, dynamic>>()) {
-      final family = entry['family'] as String;
+    manifest = json.decode(utf8.decode(manifestData.buffer.asUint8List()))
+        as List<dynamic>;
+  } catch (_) {
+    // No manifest in this test build — nothing to preload.
+    return;
+  }
+  for (final entry in manifest.cast<Map<String, dynamic>>()) {
+    final family = entry['family'] as String;
+    // Isolated per entry: one bad/unreadable font must not abort the rest
+    // of the manifest — every other family should still load.
+    try {
       final loader = FontLoader(family);
       for (final font
           in (entry['fonts'] as List).cast<Map<String, dynamic>>()) {
         loader.addFont(rootBundle.load(font['asset'] as String));
       }
       await loader.load();
+    } catch (e) {
+      stdout.writeln(encodeWarningLine(
+          'font "$family" failed to load and will render as a placeholder box: $e'));
     }
-  } catch (_) {
-    // No manifest or unloadable entries — skip silently.
   }
 }
