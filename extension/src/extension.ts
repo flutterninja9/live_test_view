@@ -1,10 +1,16 @@
+// extension/src/extension.ts
 import * as vscode from 'vscode';
 import { LiveTestCodeLensProvider } from './codelens';
+import { LivePreviewCodeLensProvider } from './previewCodelens';
 import { LiveViewPanel } from './panel';
+import { PreviewPanel } from './previewPanel';
 import { TestRun } from './runner';
+import { PreviewRun, PreviewSpawnTarget } from './previewRunner';
 
 const run = new TestRun();
+const previewRun = new PreviewRun();
 let output: vscode.OutputChannel;
+let previewSaveListener: vscode.Disposable | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   output = vscode.window.createOutputChannel('Live Test View');
@@ -14,16 +20,27 @@ export function activate(context: vscode.ExtensionContext): void {
       { language: 'dart', pattern: '**/*_test.dart' },
       new LiveTestCodeLensProvider(),
     ),
+    vscode.languages.registerCodeLensProvider(
+      { language: 'dart', pattern: '**/*.dart' },
+      new LivePreviewCodeLensProvider(),
+    ),
     vscode.commands.registerCommand(
       'liveTestView.runTest',
       (filePath: string, testName: string) =>
         runLiveTest(context.extensionUri, filePath, testName),
+    ),
+    vscode.commands.registerCommand(
+      'livePreview.show',
+      (filePath: string, symbolName: string, kind: PreviewSpawnTarget['kind']) =>
+        showLivePreview(context.extensionUri, filePath, symbolName, kind),
     ),
   );
 }
 
 export function deactivate(): void {
   run.kill();
+  previewRun.kill();
+  previewSaveListener?.dispose();
 }
 
 function runLiveTest(
@@ -97,4 +114,57 @@ function runSetup(testFilePath: string): void {
   terminal.sendText(
     'flutter pub add --dev live_test_view && dart run live_test_view:install',
   );
+}
+
+function showLivePreview(
+  extensionUri: vscode.Uri,
+  filePath: string,
+  symbolName: string,
+  kind: PreviewSpawnTarget['kind'],
+): void {
+  previewSaveListener?.dispose();
+  const panel = PreviewPanel.show(extensionUri, () => {
+    previewRun.kill();
+    previewSaveListener?.dispose();
+  });
+  panel.post({ type: 'reset', label: symbolName });
+  panel.post({ type: 'status', state: 'booting' });
+
+  try {
+    previewRun.start(
+      { targetFilePath: filePath, symbolName, kind },
+      (line) => {
+        if (line.kind === 'ltv' && line.event.type === 'frame') {
+          panel.post({ type: 'frame', seq: line.event.seq, png: line.event.png });
+          panel.post({ type: 'status', state: 'ready' });
+        } else if (line.kind === 'other') {
+          output.appendLine(line.text);
+        }
+      },
+      (event) => {
+        if (event.event === 'app.stop' && event.params.error) {
+          panel.post({ type: 'status', state: 'error', message: event.params.error });
+        }
+      },
+      (code) => {
+        if (code !== null && code !== 0) {
+          panel.post({
+            type: 'status',
+            state: 'error',
+            message: `flutter run exited with code ${code}`,
+          });
+        }
+      },
+    );
+  } catch (err) {
+    void vscode.window.showErrorMessage(`Live Preview: ${String(err)}`);
+    return;
+  }
+
+  previewSaveListener = vscode.workspace.onDidSaveTextDocument((doc) => {
+    if (doc.uri.fsPath.endsWith('.dart')) {
+      panel.post({ type: 'status', state: 'reloading' });
+      previewRun.reload();
+    }
+  });
 }

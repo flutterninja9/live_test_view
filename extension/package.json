@@ -51,6 +51,10 @@
       {
         "command": "liveTestView.runTest",
         "title": "Live Test View: Run Test"
+      },
+      {
+        "command": "livePreview.show",
+        "title": "Live Preview: Show"
       }
     ]
   },

@@ -22,8 +22,7 @@ class CounterPage extends StatefulWidget {
 class _CounterPageState extends State<CounterPage> {
   int _count = 0;
 
-  @override
-  Widget build(BuildContext context) {
+  Widget preview() {
     return Scaffold(
       appBar: AppBar(title: const Text('Live Test View example')),
       body: Center(
@@ -38,5 +37,10 @@ class _CounterPageState extends State<CounterPage> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return preview();
   }
 }
