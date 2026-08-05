@@ -15,23 +15,23 @@ class PreviewRun {
     child;
     appId;
     restartId = 0;
-    /** Stored on start() so reload() can rewrite the file with a fresh stamp. */
-    activeEntry;
+    /** Path of the generated entrypoint to delete when the run ends. */
+    activeEntryPath;
     start(target, onFrame, onDaemonEvent, onExit) {
         this.kill();
         const root = (0, runner_1.findProjectRoot)(target.targetFilePath);
         if (!root)
             throw new Error(`No pubspec.yaml found above ${target.targetFilePath}`);
-        const entryFilePath = path.join(root, '.dart_tool', 'live_test_view', 'preview_entry.dart');
-        this.activeEntry = {
+        const entryFilePath = (0, previewEntry_1.previewEntryPathFor)(root);
+        const entry = {
             targetFilePath: target.targetFilePath,
             entryFilePath,
             symbolName: target.symbolName,
             kind: target.kind,
-            // no stamp on initial launch — content is deterministic and readable
         };
         fs.mkdirSync(path.dirname(entryFilePath), { recursive: true });
-        fs.writeFileSync(entryFilePath, (0, previewEntry_1.generatePreviewEntry)(this.activeEntry));
+        fs.writeFileSync(entryFilePath, (0, previewEntry_1.generatePreviewEntry)(entry));
+        this.activeEntryPath = entryFilePath;
         const relEntry = path.relative(root, entryFilePath);
         const child = cp.spawn('flutter', ['run', '-d', 'flutter-tester', '--machine', '-t', relEntry], {
             cwd: root,
@@ -66,25 +66,18 @@ class PreviewRun {
     /**
      * Triggers a hot reload without restarting the flutter process.
      *
-     * The core problem with naive hot reload: flutter's incremental compiler
-     * only recompiles files whose mtime has changed since the last build. When
-     * the user edits their widget source the entrypoint (`preview_entry.dart`)
-     * hasn't changed, so the compiler sees an empty diff and sends a no-op
-     * delta — `reassemble()` runs with the old code and the frame looks
-     * identical.
-     *
-     * Fix: rewrite `preview_entry.dart` with a fresh ISO timestamp in the
-     * header comment before sending `app.restart`. The file's content and mtime
-     * both change, which forces the compiler to re-parse it, re-resolve all of
-     * its imports, and recompile every import whose mtime is also newer — which
-     * includes the user's just-saved widget file. The resulting delta carries
-     * the real code change, `reassemble()` rebuilds with new function bodies,
-     * and the updated frame is captured.
+     * Nothing needs to be touched on disk first: flutter_tools stats every
+     * source of the previous compile and invalidates the ones whose mtime is
+     * newer, so the user's just-saved file is picked up on its own. (An earlier
+     * version rewrote the entrypoint with a fresh timestamp to "force" a
+     * recompile. That was a workaround for a misdiagnosis — the entrypoint's
+     * location, not its mtime, was what kept the target from reloading; see
+     * `previewEntryPathFor`. All it actually did was reload the entrypoint
+     * library itself.)
      */
     reload() {
-        if (!this.child || !this.appId || !this.activeEntry)
+        if (!this.child || !this.appId)
             return;
-        fs.writeFileSync(this.activeEntry.entryFilePath, (0, previewEntry_1.generatePreviewEntry)({ ...this.activeEntry, stamp: new Date().toISOString() }));
         const cmd = (0, previewProtocol_1.encodeRestartCommand)(++this.restartId, this.appId, false);
         this.child.stdin.write(cmd + '\n');
     }
@@ -92,7 +85,11 @@ class PreviewRun {
         this.child?.kill();
         this.child = undefined;
         this.appId = undefined;
-        this.activeEntry = undefined;
+        if (this.activeEntryPath) {
+            // Generated into the user's lib/; never leave it behind.
+            fs.rmSync(this.activeEntryPath, { force: true });
+            this.activeEntryPath = undefined;
+        }
     }
 }
 exports.PreviewRun = PreviewRun;

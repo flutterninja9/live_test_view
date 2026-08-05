@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as readline from 'node:readline';
 import { findProjectRoot } from './runner';
-import { generatePreviewEntry, PreviewTarget } from './previewEntry';
+import { generatePreviewEntry, previewEntryPathFor, PreviewTarget } from './previewEntry';
 import { DaemonEvent, encodeRestartCommand, parseDaemonLine } from './previewProtocol';
 import { ParsedLine, parseLine } from './protocol';
 
@@ -19,8 +19,8 @@ export class PreviewRun {
   private child: cp.ChildProcess | undefined;
   private appId: string | undefined;
   private restartId = 0;
-  /** Stored on start() so reload() can rewrite the file with a fresh stamp. */
-  private activeEntry: PreviewTarget | undefined;
+  /** Path of the generated entrypoint to delete when the run ends. */
+  private activeEntryPath: string | undefined;
 
   start(
     target: PreviewSpawnTarget,
@@ -31,16 +31,16 @@ export class PreviewRun {
     this.kill();
     const root = findProjectRoot(target.targetFilePath);
     if (!root) throw new Error(`No pubspec.yaml found above ${target.targetFilePath}`);
-    const entryFilePath = path.join(root, '.dart_tool', 'live_test_view', 'preview_entry.dart');
-    this.activeEntry = {
+    const entryFilePath = previewEntryPathFor(root);
+    const entry: PreviewTarget = {
       targetFilePath: target.targetFilePath,
       entryFilePath,
       symbolName: target.symbolName,
       kind: target.kind,
-      // no stamp on initial launch — content is deterministic and readable
     };
     fs.mkdirSync(path.dirname(entryFilePath), { recursive: true });
-    fs.writeFileSync(entryFilePath, generatePreviewEntry(this.activeEntry));
+    fs.writeFileSync(entryFilePath, generatePreviewEntry(entry));
+    this.activeEntryPath = entryFilePath;
     const relEntry = path.relative(root, entryFilePath);
     const child = cp.spawn(
       'flutter',
@@ -79,27 +79,17 @@ export class PreviewRun {
   /**
    * Triggers a hot reload without restarting the flutter process.
    *
-   * The core problem with naive hot reload: flutter's incremental compiler
-   * only recompiles files whose mtime has changed since the last build. When
-   * the user edits their widget source the entrypoint (`preview_entry.dart`)
-   * hasn't changed, so the compiler sees an empty diff and sends a no-op
-   * delta — `reassemble()` runs with the old code and the frame looks
-   * identical.
-   *
-   * Fix: rewrite `preview_entry.dart` with a fresh ISO timestamp in the
-   * header comment before sending `app.restart`. The file's content and mtime
-   * both change, which forces the compiler to re-parse it, re-resolve all of
-   * its imports, and recompile every import whose mtime is also newer — which
-   * includes the user's just-saved widget file. The resulting delta carries
-   * the real code change, `reassemble()` rebuilds with new function bodies,
-   * and the updated frame is captured.
+   * Nothing needs to be touched on disk first: flutter_tools stats every
+   * source of the previous compile and invalidates the ones whose mtime is
+   * newer, so the user's just-saved file is picked up on its own. (An earlier
+   * version rewrote the entrypoint with a fresh timestamp to "force" a
+   * recompile. That was a workaround for a misdiagnosis — the entrypoint's
+   * location, not its mtime, was what kept the target from reloading; see
+   * `previewEntryPathFor`. All it actually did was reload the entrypoint
+   * library itself.)
    */
   reload(): void {
-    if (!this.child || !this.appId || !this.activeEntry) return;
-    fs.writeFileSync(
-      this.activeEntry.entryFilePath,
-      generatePreviewEntry({ ...this.activeEntry, stamp: new Date().toISOString() }),
-    );
+    if (!this.child || !this.appId) return;
     const cmd = encodeRestartCommand(++this.restartId, this.appId, false);
     this.child.stdin!.write(cmd + '\n');
   }
@@ -108,6 +98,10 @@ export class PreviewRun {
     this.child?.kill();
     this.child = undefined;
     this.appId = undefined;
-    this.activeEntry = undefined;
+    if (this.activeEntryPath) {
+      // Generated into the user's lib/; never leave it behind.
+      fs.rmSync(this.activeEntryPath, { force: true });
+      this.activeEntryPath = undefined;
+    }
   }
 }

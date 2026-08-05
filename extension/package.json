@@ -2,7 +2,7 @@
   "name": "live-test-view",
   "displayName": "Live Test View — Flutter Widget Test Preview",
   "description": "Watch Flutter widget tests render live, frame by frame, in a panel beside your editor — no debugger, no manual screenshotting. Click ▶ Live View above any testWidgets block.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "AnirudhSingh",
   "license": "MIT",
   "icon": "media/icon.png",
