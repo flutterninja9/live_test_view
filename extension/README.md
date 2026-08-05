@@ -17,6 +17,23 @@ testWidgets('increments the counter', (tester) async {
 
 Click it. A panel opens beside your editor and runs just that test (`flutter test --plain-name "..."`). As frames come in, they play back in the panel; the timeline scrubber at the bottom holds every frame the test rendered, so you can scrub back through the whole run once it finishes, or drag out of "follow" mode to inspect an earlier frame while it's still running. A failed test shows its error and stack trace inline.
 
+## Widget Preview (experimental)
+
+Live Test View also has a preview mode for widgets, not just tests. Above any top-level widget-returning function/getter, or `StatelessWidget`/`StatefulWidget` class, you'll see a "▶ Preview" CodeLens:
+
+```dart
+class CounterPage extends StatefulWidget {
+  // ▶ Preview appears above this line
+  ...
+}
+```
+
+Click it. A panel opens beside your editor and renders that widget live in a headless `flutter-tester` process — auto-wrapped in a minimal `MaterialApp(home: Scaffold(...))` so `Theme.of`, `MediaQuery`, `Navigator`, and friends resolve without extra setup. Save the file and the panel updates via a real Flutter hot reload — sub-second, no process restart.
+
+![Live Widget Preview demo](https://raw.githubusercontent.com/flutterninja9/live_test_view/main/assets/live_widget_preview_demo.gif)
+
+Unlike test mode's scrubbable frame history, preview mode shows one thing: the widget's current rendered state. It's not interactive (taps/scroll/typing aren't forwarded), and it doesn't inject your app's own Provider/Riverpod/Bloc setup — widgets that need that will show Flutter's error widget, same as they would in an unwrapped test.
+
 ## Setup prompt
 
 If you click "▶ Live View" and no frames show up, the panel shows a "Set up Live Test View" button. Clicking it opens a terminal and runs:

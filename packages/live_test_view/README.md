@@ -41,6 +41,14 @@ This package is designed so that adding it can never change your test suite's be
 
 This package only captures and streams frames — it has no UI of its own. Pair it with the "Live Test View" VS Code extension, which adds the "▶ Live View" CodeLens, runs your tests, and renders the captured frames in a scrubbable timeline panel.
 
+## Widget preview support (experimental)
+
+Alongside `liveTestView`, this package exports `previewCapture`, the hook behind the extension's live widget preview mode. Preview mode renders an arbitrary widget live — outside of any test, via `flutter run -d flutter-tester` — and keeps it up to date with real Flutter hot reload as you edit and save, instead of replaying a recorded test run.
+
+The extension generates a throwaway entrypoint under `.dart_tool/live_test_view/preview_entry.dart` that calls `previewCapture(() => YourWidget())`. `previewCapture` wraps the widget in a bare `MaterialApp(home: Scaffold(...))`, registers a post-frame capture callback, and streams the same `##LTV##`-prefixed frame protocol described above. You never call this directly — it's driven by the extension's "▶ Preview" CodeLens.
+
+![Live Widget Preview demo](https://raw.githubusercontent.com/flutterninja9/live_test_view/main/assets/live_widget_preview_demo.gif)
+
 ## Fonts
 
 `flutter test` renders all text with a placeholder font (every glyph a solid box) unless something loads real fonts in. When `LIVE_TEST_VIEW=1`, `liveTestView` does this for you before `testMain` runs, via `loadRealFonts()`:
