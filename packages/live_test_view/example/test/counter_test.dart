@@ -17,4 +17,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1'), findsOneWidget);
   });
+
+  testWidgets('card as MaterialApp home without scaffold', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('John Doe'),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('John Doe'), findsOneWidget);
+  });
 }
