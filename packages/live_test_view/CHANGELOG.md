@@ -1,3 +1,11 @@
+## 0.5.0
+
+- Fix: widgets that do not fill the viewport (e.g. a list item or card as `MaterialApp.home` without a full-screen `Scaffold`) now emit frames instead of being silently discarded. The blank-frame guard only drops snapshots when all four corners **and** the center are transparent — a mid-recomposition glitch — not when only the viewport edges are unpainted.
+
+## 0.4.0
+
+- Add `previewCapture` for Live Widget Preview mode: wraps a widget in a minimal `MaterialApp`/`Scaffold`, registers a post-frame capture callback, and streams the same `##LTV##` frame protocol used by test mode.
+
 ## 0.2.1
 
 - Fix: a font that fails to load from `FontManifest.json` no longer aborts the rest of the manifest — each family loads independently, and a failure emits a `##LTV##` warning line naming it instead of silently rendering a placeholder box.

@@ -1,3 +1,17 @@
+## 0.5.0
+
+- Fix: smarter setup diagnostics when a test passes but no frames arrive — inspects `pubspec.yaml` and `test/flutter_test_config.dart` and shows a specific message (missing package, missing config, config not wired, or genuinely no frames captured) instead of always implying the dev dependency is absent.
+- Requires `live_test_view` package >= 0.5.0 for the partial-viewport frame capture fix.
+
+## 0.4.0
+
+- Widget Preview hot reload: saving a `.dart` file triggers a real Flutter hot reload in the preview process — sub-second updates without restarting `flutter run`.
+- README now embeds the Live Widget Preview demo GIF.
+
+## 0.3.0
+
+- **Widget Preview (experimental):** "▶ Preview" CodeLens above top-level widget-returning functions/getters and `StatelessWidget`/`StatefulWidget` classes. Spawns a headless `flutter-tester` process and renders the widget live in a panel beside the editor.
+
 ## 0.2.0
 
 - Redesigned the panel UI/UX: overhauled timeline, frame view, and overall styling.
