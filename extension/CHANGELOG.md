@@ -1,3 +1,7 @@
+## 0.5.1
+
+- Requires `live_test_view` package >= 0.5.1 for GetX / `GetMaterialApp` frame capture fixes.
+
 ## 0.5.0
 
 - Fix: smarter setup diagnostics when a test passes but no frames arrive — inspects `pubspec.yaml` and `test/flutter_test_config.dart` and shows a specific message (missing package, missing config, config not wired, or genuinely no frames captured) instead of always implying the dev dependency is absent.

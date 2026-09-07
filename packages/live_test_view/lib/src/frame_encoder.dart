@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'protocol.dart';
+import 'layer_capture.dart';
 
 /// Binding-agnostic core of frame capture: given a per-frame image future and
 /// timestamp, encodes it to PNG and emits it on [_sink] in strict seq order,
@@ -76,7 +77,7 @@ class FrameEncoder {
     try {
       image = await imageFuture;
       final raw = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      if (raw == null || _isBlankSnapshot(raw, image.width, image.height)) {
+      if (raw == null || isBlankRgbaGrid(raw, image.width, image.height)) {
         return;
       }
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -95,28 +96,6 @@ class FrameEncoder {
       _emitReady();
       if (_pendingCount == 0) _drainWaiter?.complete();
     }
-  }
-
-  /// True when corners *and* center are transparent — a mid-recomposition
-  /// glitch with nothing painted yet.
-  ///
-  /// Partially-filled viewports (e.g. a list item as [MaterialApp.home]
-  /// without a [Scaffold]) leave the viewport corners unpainted; those are
-  /// valid frames and must not be dropped just because the corners are clear.
-  bool _isBlankSnapshot(ByteData raw, int width, int height) {
-    bool transparentAt(int x, int y) {
-      final offset = (y * width + x) * 4;
-      if (offset + 3 >= raw.lengthInBytes) return true;
-      return raw.getUint8(offset + 3) < 250;
-    }
-
-    final cx = width ~/ 2;
-    final cy = height ~/ 2;
-    return transparentAt(0, 0) &&
-        transparentAt(width - 1, 0) &&
-        transparentAt(0, height - 1) &&
-        transparentAt(width - 1, height - 1) &&
-        transparentAt(cx, cy);
   }
 
   void _emitReady() {

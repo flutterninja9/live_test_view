@@ -1,3 +1,9 @@
+## 0.5.1
+
+- Fix: `GetMaterialApp` and other GetX roots now capture frames reliably. GetX defers its first real paint to a post-frame callback — if the test body only pumps once, an extra pump now runs before your `tearDown` while capture is still active.
+- Fix: blank-frame detection uses corner, quarter-point, center, and grid sampling so content that does not fill the viewport (list items, cards, GetX layouts) is no longer silently discarded.
+- Capture now walks to the root composited layer (`TransformLayer` included) instead of requiring a bare `OffsetLayer` on `debugLayer`.
+
 ## 0.5.0
 
 - Fix: widgets that do not fill the viewport (e.g. a list item or card as `MaterialApp.home` without a full-screen `Scaffold`) now emit frames instead of being silently discarded. The blank-frame guard only drops snapshots when all four corners **and** the center are transparent — a mid-recomposition glitch — not when only the viewport edges are unpainted.

@@ -25,15 +25,17 @@ Future<void> liveTestView(FutureOr<void> Function() testMain) async {
   // Frames pumped between tests (tree teardown/rebuild) are not real UI —
   // only capture within an actual test's run.
   setUp(() => capture.setActive(true));
-  tearDown(() => capture.setActive(false));
-  // `testMain` only *declares* the suite's tests here — package:test invokes
-  // the declared test bodies afterward, outside this awaited Future. So the
-  // real end-of-suite hook is tearDownAll, which package:test guarantees to
-  // run once all declared tests have actually executed, still inside the
-  // isolate that owns the persistent frame callback above. Registering it
-  // before `await testMain()` (rather than flushing in a `finally` after)
-  // is required: a `finally` here would run once mere declaration finishes,
-  // not once the tests actually execute.
   tearDownAll(() => capture.flush());
   await testMain();
+  // Registered after [testMain] so this runs *before* the test file's own
+  // tearDown hooks (package:test runs tearDown last-registered first).
+  // GetMaterialApp and similar roots often paint their real content on a
+  // post-frame callback after the test body's final pump — pump once more
+  // while capture is still active and before the test tears down DI/state.
+  tearDown(() {
+    if (capture.captureAttempts == 0) {
+      binding.pump();
+    }
+    capture.setActive(false);
+  });
 }

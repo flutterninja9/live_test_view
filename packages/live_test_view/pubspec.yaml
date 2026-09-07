@@ -3,7 +3,7 @@ description: >-
   Watch Flutter widget tests render live in your editor. Companion package
   for the Live Test View VS Code extension.
 repository: "https://www.anirudhsingh.in"
-version: 0.5.0
+version: 0.5.1
 environment:
   sdk: ^3.2.0
   flutter: ">=3.16.0"

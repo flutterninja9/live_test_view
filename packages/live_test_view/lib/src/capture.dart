@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'frame_encoder.dart';
+import 'layer_capture.dart';
 
 /// Captures the test's root render layer after each pumped frame and emits
 /// it via the shared [FrameEncoder] pipeline.
@@ -16,6 +16,10 @@ class FrameCapture {
 
   DateTime? _firstFrameAt;
   bool _active = false;
+  int _captureAttempts = 0;
+
+  /// How many frame captures were started for the active test.
+  int get captureAttempts => _captureAttempts;
 
   /// Gates capture to only the window between a test's `setUp` and
   /// `tearDown`. Flutter's test framework pumps frames outside that window
@@ -25,7 +29,10 @@ class FrameCapture {
   /// resets the per-test clock so each test's timeline starts at 0ms.
   void setActive(bool value) {
     _active = value;
-    if (value) _firstFrameAt = null;
+    if (value) {
+      _firstFrameAt = null;
+      _captureAttempts = 0;
+    }
   }
 
   /// Called synchronously from a persistent frame callback, after paint.
@@ -37,9 +44,9 @@ class FrameCapture {
       return;
     }
     final renderView = _binding.renderViews.first;
-    final layer = renderView.debugLayer;
-    if (layer is! OffsetLayer) return;
-    final imageFuture = layer.toImage(renderView.paintBounds);
+    final imageFuture = captureRenderView(renderView);
+    if (imageFuture == null) return;
+    _captureAttempts++;
     final testTimeMs =
         _binding.clock.now().difference(_firstFrameAt!).inMilliseconds;
     _encoder.capture(imageFuture, testTimeMs);

@@ -79,6 +79,19 @@ void main() {
     );
   });
 
+  test('captures GetMaterialApp widgets with a single pump', () async {
+    final result = await _runExampleTests(
+      live: true,
+      plainName: 'GetMaterialApp home',
+    );
+    expect(result.exitCode, 0, reason: '${result.stderr}');
+    expect(
+      _framesFrom(result).length,
+      greaterThan(0),
+      reason: 'GetMaterialApp must emit frames like MaterialApp',
+    );
+  });
+
   test('is byte-for-byte silent without the activation flag', () async {
     final result = await _runExampleTests(live: false);
     expect(result.exitCode, 0);

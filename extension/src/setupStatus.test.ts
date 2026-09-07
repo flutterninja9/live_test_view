@@ -23,7 +23,7 @@ describe('setupStatus', () => {
     const testDir = path.join(root, 'test');
     fs.mkdirSync(testDir, { recursive: true });
     const depBlock = opts.withDependency
-      ? 'dev_dependencies:\n  live_test_view: ^0.5.0\n'
+      ? 'dev_dependencies:\n  live_test_view: ^0.5.1\n'
       : 'dev_dependencies:\n  flutter_test:\n    sdk: flutter\n';
     fs.writeFileSync(path.join(root, 'pubspec.yaml'), `name: app\n${depBlock}`);
     if (opts.withConfig) {

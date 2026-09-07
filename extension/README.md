@@ -47,7 +47,7 @@ Re-run the test afterward and frames should appear. If the project already has a
 ## Requirements
 
 - Flutter >= 3.16
-- `live_test_view` package >= 0.5.0
+- `live_test_view` package >= 0.5.1
 - VS Code >= 1.85
 
 ## License

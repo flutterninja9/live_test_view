@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 import 'package:live_test_view_example/main.dart';
 
 void main() {
@@ -21,6 +22,21 @@ void main() {
   testWidgets('card as MaterialApp home without scaffold', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        home: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('John Doe'),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('John Doe'), findsOneWidget);
+  });
+
+  testWidgets('card as GetMaterialApp home without scaffold', (tester) async {
+    await tester.pumpWidget(
+      GetMaterialApp(
         home: Card(
           child: Padding(
             padding: const EdgeInsets.all(16),

@@ -9,6 +9,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  get: ^4.7.2
   live_test_view:
     path: ../
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import 'frame_encoder.dart';
+import 'layer_capture.dart';
 
 /// Boots [builder] as the app root under a headless engine (the intended
 /// target is `flutter run -d flutter-tester`) and streams every subsequent
@@ -23,13 +23,14 @@ void previewCapture(Widget Function() builder) {
       encoder.warnCapOnce();
     } else {
       final renderView = WidgetsBinding.instance.renderViews.first;
-      final layer = renderView.debugLayer;
-      if (layer is OffsetLayer) {
-        final imageFuture = layer.toImage(renderView.paintBounds);
-        final testTimeMs =
-            DateTime.now().difference(firstFrameAt!).inMilliseconds;
-        encoder.capture(imageFuture, testTimeMs);
+      final imageFuture = captureRenderView(renderView);
+      if (imageFuture == null) {
+        WidgetsBinding.instance.addPostFrameCallback(onFrame);
+        return;
       }
+      final testTimeMs =
+          DateTime.now().difference(firstFrameAt!).inMilliseconds;
+      encoder.capture(imageFuture, testTimeMs);
     }
     // Unlike TestWidgetsFlutterBinding, the plain app binding has no
     // persistent-callback API — re-register for the next frame every time,
