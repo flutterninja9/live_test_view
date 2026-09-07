@@ -10,6 +10,7 @@ const panel_1 = require("./panel");
 const previewPanel_1 = require("./previewPanel");
 const runner_1 = require("./runner");
 const previewRunner_1 = require("./previewRunner");
+const setupStatus_1 = require("./setupStatus");
 const run = new runner_1.TestRun();
 const previewRun = new previewRunner_1.PreviewRun();
 let output;
@@ -64,7 +65,7 @@ function runLiveTest(extensionUri, filePath, testName) {
             }
         }, (code) => {
             if (code === 0 && sawRealTest && frameCount === 0) {
-                panel.post({ type: 'setupNeeded' });
+                panel.post({ type: 'setupNeeded', reason: setupReasonFor(filePath) });
                 return;
             }
             panel.post({
@@ -77,6 +78,18 @@ function runLiveTest(extensionUri, filePath, testName) {
     }
     catch (err) {
         void vscode.window.showErrorMessage(`Live Test View: ${String(err)}`);
+    }
+}
+function setupReasonFor(testFilePath) {
+    switch ((0, setupStatus_1.inspectSetup)(testFilePath).kind) {
+        case 'missingPackage':
+            return 'missingPackage';
+        case 'missingConfig':
+            return 'missingConfig';
+        case 'configNotWired':
+            return 'configNotWired';
+        case 'ready':
+            return 'noFramesCaptured';
     }
 }
 function runSetup(testFilePath) {

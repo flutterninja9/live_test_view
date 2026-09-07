@@ -1,11 +1,17 @@
 import * as vscode from 'vscode';
 
+export type SetupReason =
+  | 'missingPackage'
+  | 'missingConfig'
+  | 'configNotWired'
+  | 'noFramesCaptured';
+
 export type PanelMessage =
   | { type: 'reset'; testLabel: string }
   | { type: 'frame'; seq: number; testTimeMs: number; png: string }
   | { type: 'status'; state: 'passed' | 'failed'; error?: string; stack?: string }
   | { type: 'testName'; name: string }
-  | { type: 'setupNeeded' };
+  | { type: 'setupNeeded'; reason: SetupReason };
 
 export class LiveViewPanel {
   private static current: LiveViewPanel | undefined;
@@ -105,8 +111,8 @@ function render(webview: vscode.Webview, extensionUri: vscode.Uri): string {
   </div>
   <div id="setup-box" hidden>
     <div id="setup-icon">⚙</div>
-    <p>No frames received — the <code>live_test_view</code> package doesn't seem to be set up in this project.</p>
-    <button id="setup-btn" class="ltv-btn">Set up Live Test View</button>
+    <p id="setup-message"></p>
+    <button id="setup-btn" class="ltv-btn" hidden>Set up Live Test View</button>
   </div>
   <script nonce="${nonce}" src="${js}"></script>
 </body>

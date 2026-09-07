@@ -55,6 +55,8 @@
   const copyBtn = el('copy-btn');
   const maximizeBtn = el('maximize-btn');
   const setupBox = el('setup-box');
+  const setupMessage = el('setup-message');
+  const setupBtn = el('setup-btn');
   const replayBtn = el('replay-btn');
   const followBtn = el('follow-btn');
 
@@ -206,6 +208,35 @@
     });
   }
 
+  function setupCopy(reason) {
+    switch (reason) {
+      case 'missingPackage':
+        return {
+          html:
+            'No frames received — add <code>live_test_view</code> as a dev dependency and wire up <code>test/flutter_test_config.dart</code>.',
+          showSetup: true,
+        };
+      case 'missingConfig':
+        return {
+          html:
+            '<code>live_test_view</code> is in your pubspec, but <code>test/flutter_test_config.dart</code> is missing. Run the installer or create the config file.',
+          showSetup: true,
+        };
+      case 'configNotWired':
+        return {
+          html:
+            '<code>test/flutter_test_config.dart</code> exists but does not call <code>liveTestView(...)</code>. Wrap your existing <code>testExecutable</code> body with it.',
+          showSetup: false,
+        };
+      default:
+        return {
+          html:
+            'The test passed but no frames were captured. This usually means the hook is wired correctly but nothing was painted during the test — check that the test calls <code>pumpWidget</code>/<code>pump</code>, and run <code>LIVE_TEST_VIEW=1 flutter test &lt;file&gt; --plain-name &lt;name&gt;</code> in a terminal to inspect raw output.',
+          showSetup: false,
+        };
+    }
+  }
+
   window.addEventListener('message', (e) => {
     const m = e.data;
     switch (m.type) {
@@ -233,6 +264,7 @@
         drawer.classList.remove('maximized');
         maximizeBtn.textContent = '⤢ Maximize';
         setupBox.hidden = true;
+        setupBtn.hidden = true;
         updateReplayEnabled();
         updateFollowUI();
         break;
@@ -258,11 +290,15 @@
           drawer.hidden = false;
         }
         break;
-      case 'setupNeeded':
+      case 'setupNeeded': {
         state.textContent = '';
         state.className = '';
+        const copy = setupCopy(m.reason || 'noFramesCaptured');
+        setupMessage.innerHTML = copy.html;
+        setupBtn.hidden = !copy.showSetup;
         setupBox.hidden = false;
         break;
+      }
     }
   });
 
@@ -305,7 +341,7 @@
     maximizeBtn.textContent = maximized ? '⤢ Restore' : '⤢ Maximize';
   });
 
-  el('setup-btn').addEventListener('click', () => {
+  setupBtn.addEventListener('click', () => {
     vscode.postMessage({ type: 'setup' });
   });
 

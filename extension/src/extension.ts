@@ -2,10 +2,11 @@
 import * as vscode from 'vscode';
 import { LiveTestCodeLensProvider } from './codelens';
 import { LivePreviewCodeLensProvider } from './previewCodelens';
-import { LiveViewPanel } from './panel';
+import { LiveViewPanel, SetupReason } from './panel';
 import { PreviewPanel } from './previewPanel';
 import { TestRun } from './runner';
 import { PreviewRun, PreviewSpawnTarget } from './previewRunner';
+import { inspectSetup } from './setupStatus';
 
 const run = new TestRun();
 const previewRun = new PreviewRun();
@@ -92,7 +93,7 @@ function runLiveTest(
       },
       (code) => {
         if (code === 0 && sawRealTest && frameCount === 0) {
-          panel.post({ type: 'setupNeeded' });
+          panel.post({ type: 'setupNeeded', reason: setupReasonFor(filePath) });
           return;
         }
         panel.post({
@@ -105,6 +106,19 @@ function runLiveTest(
     );
   } catch (err) {
     void vscode.window.showErrorMessage(`Live Test View: ${String(err)}`);
+  }
+}
+
+function setupReasonFor(testFilePath: string): SetupReason {
+  switch (inspectSetup(testFilePath).kind) {
+    case 'missingPackage':
+      return 'missingPackage';
+    case 'missingConfig':
+      return 'missingConfig';
+    case 'configNotWired':
+      return 'configNotWired';
+    case 'ready':
+      return 'noFramesCaptured';
   }
 }
 

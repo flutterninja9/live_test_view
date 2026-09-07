@@ -91,8 +91,8 @@ function render(webview, extensionUri) {
   </div>
   <div id="setup-box" hidden>
     <div id="setup-icon">⚙</div>
-    <p>No frames received — the <code>live_test_view</code> package doesn't seem to be set up in this project.</p>
-    <button id="setup-btn" class="ltv-btn">Set up Live Test View</button>
+    <p id="setup-message"></p>
+    <button id="setup-btn" class="ltv-btn" hidden>Set up Live Test View</button>
   </div>
   <script nonce="${nonce}" src="${js}"></script>
 </body>
